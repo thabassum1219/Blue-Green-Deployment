@@ -33,7 +33,7 @@ pipeline {
         
         stage('Tests') {
             steps {
-                sh "mvn test -DskipTests=true"
+                sh "mvn clean test -X -DskipTests=true"
             }
         }
         
@@ -71,7 +71,7 @@ pipeline {
         stage('Publish artifact To Nexus') {
             steps {
                 withMaven(globalMavenSettingsConfig: 'maven', jdk: '', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                    sh "mvn deploy -Dskiptests=true"
+                    sh "mvn deploy -X -DskipTests=true"
                 }
             }
         }
@@ -105,19 +105,23 @@ pipeline {
         
         stage('Deploy MySQL Deployment and Service') {
             steps {
-                script{
+                script {
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
                         sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
-                        }
+                        
                     }
+                    
                 }
+                
             }
+            
         }
+        
         
         
         stage('Deploy SVC app') {
             steps {
-                script{
+                script {
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
                         sh """ if ! kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}; then
                                 kubectl apply -f bankapp-service.yml -n ${KUBE_NAMESPACE}
@@ -132,7 +136,7 @@ pipeline {
         
         stage('Deploy to Kubernetes') {
             steps {
-                script{
+                script {
                     def deploymentFile = ""
                     if (params.DEPLOY_ENV == 'blue') {
                         deploymentFile = 'app-deployment-blue.yml'
@@ -142,10 +146,11 @@ pipeline {
                     
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
                         sh "kubectl apply -f ${deploymentFile} -n ${KUBE_NAMESPACE}"
-                        }
+                        
                     }
                 }
             }
+        }
         
         
         stage('Switch Traffic Between Blue & Green Environment') {
@@ -157,7 +162,7 @@ pipeline {
                     def newEnv = params.DEPLOY_ENV
 
                     // Always switch traffic based on DEPLOY_ENV
-                    withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.co') {
+                    withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
                         sh '''
                             kubectl patch service bankapp-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"bankapp\\", \\"version\\": \\"''' + newEnv + '''\\"}}}" -n ${KUBE_NAMESPACE}
                         '''
@@ -169,7 +174,7 @@ pipeline {
         
         stage('Verify Deployment') {
             steps {
-                script{
+                script {
                     def verifyEnv = params.DEPLOY_ENV
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
                         sh """
@@ -182,4 +187,5 @@ pipeline {
         }
         
      
+    }
 }
