@@ -44,17 +44,14 @@ pipeline {
         }
         
         stage('Sonarqube analysis') {
+            steps {
             withSonarQubeEnv('sonar') {
                 sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=BlueGreen -Dsonar.projectName=BlueGreen -Dsonar.java.binaries=target"
+                }
+                
             }
         }
         
-        
-        stage('Trivy FS scan') {
-            steps {
-                sh "trivy fs --format table -o fs.html ."
-            }
-        }
         
         stage('Quality gate check') {
             steps {
@@ -83,7 +80,7 @@ pipeline {
             steps {
                 script{
                     withDockerRegistry(credentialsId: 'docker-cred') {
-                        sh "docker build -t $(IMAGE_NAME):$(TAG) ."
+                        sh "docker build -t ${IMAGE_NAME}:${TAG} ."
                     }
                 }
             }
@@ -92,7 +89,7 @@ pipeline {
         
          stage('trivy image scan') {
             steps {
-                sh "trivy image --format table -o fs.html $(IMAGE_NAME):$(TAG)"
+                sh "trivy image --format table -o fs.html ${IMAGE_NAME}:${TAG}"
             }
         }
         
@@ -100,13 +97,13 @@ pipeline {
             steps {
                 script{
                     withDockerRegistry(credentialsId: 'docker-cred') {
-                        sh "docker push $(IMAGE_NAME):$(TAG)"
+                        sh "docker push ${IMAGE_NAME}:${TAG}"
                     }
                 }
             }
         }
         
-        stage('Deploy database') {
+        stage('Deploy MySQL Deployment and Service') {
             steps {
                 script{
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
@@ -117,16 +114,6 @@ pipeline {
             }
         }
         
-        stage('Deploy database') {
-            steps {
-                script{
-                    withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
-                        sh "kubectl apply -f mysql-ds.yml ${KUBE_NAMESPACE}"
-                        }
-                    }
-                }
-            }
-        }
         
         stage('Deploy SVC app') {
             steps {
@@ -140,7 +127,7 @@ pipeline {
                     }
                 }
             }
-        }
+        
         
         
         stage('Deploy to Kubernetes') {
@@ -159,7 +146,7 @@ pipeline {
                     }
                 }
             }
-        }
+        
         
         stage('Switch Traffic Between Blue & Green Environment') {
             when {
@@ -193,6 +180,6 @@ pipeline {
                 }
             }
         }
+        
      
-    }
 }
