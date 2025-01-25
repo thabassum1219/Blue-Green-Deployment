@@ -107,7 +107,7 @@ pipeline {
             steps {
                 script{
                     withKubeConfig(caCertificate: '', clusterName: 'rajesh-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://40E98654D2F5E9370C3C7FD3BBCBEB43.gr7.ap-south-1.eks.amazonaws.com') {
-                        sh "kubectl apply -f mysql-ds.yml ${KUBE_NAMESPACE}"
+                        sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
                         }
                     }
                 }
