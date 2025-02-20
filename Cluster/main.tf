@@ -111,7 +111,7 @@ resource "aws_eks_node_group" "rajesh" {
   instance_types = ["t2.large"]
 
   remote_access {
-    ec2_ssh_key = var.ssh_key_name
+    ec2_ssh_key = "Test"
     source_security_group_ids = [aws_security_group.rajesh_node_sg.id]
   }
 }
