@@ -53,14 +53,14 @@ pipeline {
         }
         
         
-        #stage('Quality gate check') {
-         #   steps {
-          #      timeout(time: 1, unit: 'HOURS') {
-           #         waitForQualityGate abortPipeline: false
-                    
-            #    }
-            #}
-        #}
+        //stage('Quality gate check') {
+         //   steps {
+          //      timeout(time: 1, unit: 'HOURS') {
+           //         waitForQualityGate abortPipeline: false
+             //       
+            //    }
+            //}
+        //}
         
         stage('Build') {
             steps {
